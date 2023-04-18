@@ -25,6 +25,7 @@ import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortField;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
 
 public interface SortOrderVisitor<T> {
 
@@ -43,6 +44,15 @@ public interface SortOrderVisitor<T> {
   T day(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder);
 
   T hour(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder);
+
+  default T hilbert(
+      String sourceName,
+      int sourceId,
+      HilbertCurve2D curve,
+      SortDirection direction,
+      NullOrder nullOrder) {
+    throw new UnsupportedOperationException("Hilbert sort order is not supported");
+  }
 
   default T unknown(
       String sourceName,
@@ -102,6 +112,15 @@ public interface SortOrderVisitor<T> {
       } else if (transform == Timestamps.HOUR || transform instanceof Hours) {
         results.add(
             visitor.hour(sourceName, field.sourceId(), field.direction(), field.nullOrder()));
+      } else if (transform instanceof Hilbert) {
+        Hilbert<?> hilbert = (Hilbert<?>) transform;
+        results.add(
+            visitor.hilbert(
+                sourceName,
+                field.sourceId(),
+                hilbert.curve(),
+                field.direction(),
+                field.nullOrder()));
       } else if (transform instanceof UnknownTransform) {
         results.add(
             visitor.unknown(

@@ -18,13 +18,16 @@
  */
 package org.apache.iceberg.transforms;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Splitter;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
 
 /**
  * Factory methods for transforms.
@@ -38,6 +41,7 @@ public class Transforms {
   private Transforms() {}
 
   private static final Pattern HAS_WIDTH = Pattern.compile("(\\w+)\\[(\\d+)\\]");
+  private static final Pattern HILBERT = Pattern.compile("hilbert\\[([^]]*)]");
 
   public static Transform<?, ?> fromString(String transform) {
     Matcher widthMatcher = HAS_WIDTH.matcher(transform);
@@ -49,6 +53,19 @@ public class Transforms {
       } else if (name.equalsIgnoreCase("bucket")) {
         return Bucket.get(parsedWidth);
       }
+    }
+
+    Matcher hilbertMatcher = HILBERT.matcher(transform);
+    if (hilbertMatcher.matches()) {
+      String parameters = hilbertMatcher.group(1);
+      List<String> parts = Splitter.on(',').splitToList(parameters);
+      Preconditions.checkArgument(parts.size() == 5, "Hilbert transform requires 5 parameters");
+      int resolution = Integer.parseInt(parts.get(0));
+      double minX = Double.parseDouble(parts.get(1));
+      double minY = Double.parseDouble(parts.get(2));
+      double maxX = Double.parseDouble(parts.get(3));
+      double maxY = Double.parseDouble(parts.get(4));
+      return Hilbert.get(resolution, minX, minY, maxX, maxY);
     }
 
     if (transform.equalsIgnoreCase("identity")) {
@@ -291,6 +308,44 @@ public class Transforms {
    */
   public static <T> Transform<T, T> truncate(int width) {
     return Truncate.get(width);
+  }
+
+  /**
+   * Returns a hilbert {@link Transform} for the given resolution.
+   *
+   * @param <T> Java type accepted by the transform.
+   * @param resolution the resolution of the hilbert transform
+   * @return a hilbert transform
+   */
+  public static <T> Transform<T, Long> hilbert(int resolution) {
+    return Hilbert.get(resolution);
+  }
+
+  /**
+   * Returns a hilbert {@link Transform} for the given resolution.
+   *
+   * @param <T> Java type accepted by the transform.
+   * @param curve the hilbert curve to use
+   * @return a hilbert transform
+   */
+  public static <T> Transform<T, Long> hilbert(HilbertCurve2D curve) {
+    return Hilbert.get(curve);
+  }
+
+  /**
+   * Returns a hilbert {@link Transform} for the given resolution and plane boundary.
+   *
+   * @param <T> Java type accepted by the transform.
+   * @param resolution the resolution of the hilbert transform
+   * @param minX the minimum x value of the hilbert transform
+   * @param minY the minimum y value of the hilbert transform
+   * @param maxX the maximum x value of the hilbert transform
+   * @param maxY the maximum y value of the hilbert transform
+   * @return a hilbert transform
+   */
+  public static <T> Transform<T, Long> hilbert(
+      int resolution, double minX, double minY, double maxX, double maxY) {
+    return Hilbert.get(resolution, minX, minY, maxX, maxY);
   }
 
   /**

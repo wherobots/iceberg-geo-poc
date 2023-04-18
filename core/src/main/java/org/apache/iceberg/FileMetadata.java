@@ -56,6 +56,8 @@ public class FileMetadata {
     private Map<Integer, Long> nanValueCounts = null;
     private Map<Integer, ByteBuffer> lowerBounds = null;
     private Map<Integer, ByteBuffer> upperBounds = null;
+    private Map<Integer, ByteBuffer> geomLowerBounds = null;
+    private Map<Integer, ByteBuffer> geomUpperBounds = null;
     private ByteBuffer keyMetadata = null;
     private Integer sortOrderId = null;
     private List<Long> splitOffsets = null;
@@ -81,6 +83,8 @@ public class FileMetadata {
       this.nanValueCounts = null;
       this.lowerBounds = null;
       this.upperBounds = null;
+      this.geomLowerBounds = null;
+      this.geomUpperBounds = null;
       this.sortOrderId = null;
     }
 
@@ -101,6 +105,8 @@ public class FileMetadata {
       this.nanValueCounts = toCopy.nanValueCounts();
       this.lowerBounds = toCopy.lowerBounds();
       this.upperBounds = toCopy.upperBounds();
+      this.geomLowerBounds = toCopy.geomLowerBounds();
+      this.geomUpperBounds = toCopy.geomUpperBounds();
       this.keyMetadata =
           toCopy.keyMetadata() == null ? null : ByteBuffers.copy(toCopy.keyMetadata());
       this.sortOrderId = toCopy.sortOrderId();
@@ -192,6 +198,8 @@ public class FileMetadata {
       this.nanValueCounts = metrics.nanValueCounts();
       this.lowerBounds = metrics.lowerBounds();
       this.upperBounds = metrics.upperBounds();
+      this.geomLowerBounds = metrics.geomLowerBounds();
+      this.geomUpperBounds = metrics.geomUpperBounds();
       return this;
     }
 
@@ -258,7 +266,9 @@ public class FileMetadata {
               nullValueCounts,
               nanValueCounts,
               lowerBounds,
-              upperBounds),
+              upperBounds,
+              geomLowerBounds,
+              geomUpperBounds),
           equalityFieldIds,
           sortOrderId,
           splitOffsets,

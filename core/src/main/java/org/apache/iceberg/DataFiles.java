@@ -151,6 +151,8 @@ public class DataFiles {
     private Map<Integer, Long> nanValueCounts = null;
     private Map<Integer, ByteBuffer> lowerBounds = null;
     private Map<Integer, ByteBuffer> upperBounds = null;
+    private Map<Integer, ByteBuffer> geomLowerBounds = null;
+    private Map<Integer, ByteBuffer> geomUpperBounds = null;
     private ByteBuffer keyMetadata = null;
     private List<Long> splitOffsets = null;
     private Integer sortOrderId = SortOrder.unsorted().orderId();
@@ -176,6 +178,8 @@ public class DataFiles {
       this.nanValueCounts = null;
       this.lowerBounds = null;
       this.upperBounds = null;
+      this.geomLowerBounds = null;
+      this.geomUpperBounds = null;
       this.splitOffsets = null;
       this.sortOrderId = SortOrder.unsorted().orderId();
     }
@@ -196,6 +200,8 @@ public class DataFiles {
       this.nanValueCounts = toCopy.nanValueCounts();
       this.lowerBounds = toCopy.lowerBounds();
       this.upperBounds = toCopy.upperBounds();
+      this.geomLowerBounds = toCopy.geomLowerBounds();
+      this.geomUpperBounds = toCopy.geomUpperBounds();
       this.keyMetadata =
           toCopy.keyMetadata() == null ? null : ByteBuffers.copy(toCopy.keyMetadata());
       this.splitOffsets =
@@ -287,6 +293,8 @@ public class DataFiles {
       this.nanValueCounts = metrics.nanValueCounts();
       this.lowerBounds = metrics.lowerBounds();
       this.upperBounds = metrics.upperBounds();
+      this.geomLowerBounds = metrics.geomLowerBounds();
+      this.geomUpperBounds = metrics.geomUpperBounds();
       return this;
     }
 
@@ -343,7 +351,9 @@ public class DataFiles {
               nullValueCounts,
               nanValueCounts,
               lowerBounds,
-              upperBounds),
+              upperBounds,
+              geomLowerBounds,
+              geomUpperBounds),
           keyMetadata,
           splitOffsets,
           sortOrderId);

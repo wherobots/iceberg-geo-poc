@@ -182,6 +182,16 @@ public class SparkDataFile implements DataFile {
   }
 
   @Override
+  public Map<Integer, ByteBuffer> geomLowerBounds() {
+    return null;
+  }
+
+  @Override
+  public Map<Integer, ByteBuffer> geomUpperBounds() {
+    return null;
+  }
+
+  @Override
   public ByteBuffer keyMetadata() {
     return convert(keyMetadataType, wrapped.get(keyMetadataPosition));
   }

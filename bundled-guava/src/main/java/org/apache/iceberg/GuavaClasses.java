@@ -53,6 +53,9 @@ import com.google.common.io.Resources;
 import com.google.common.primitives.Bytes;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.uzaygezen.core.BitVector;
+import com.google.uzaygezen.core.BitVectorFactories;
+import com.google.uzaygezen.core.CompactHilbertCurve;
 
 // inspired in part by
 // https://github.com/apache/avro/blob/release-1.8.2/lang/java/guava/src/main/java/org/apache/avro/GuavaClasses.java
@@ -99,5 +102,8 @@ public class GuavaClasses {
     CountingOutputStream.class.getName();
     Suppliers.class.getName();
     Stopwatch.class.getName();
+    BitVector.class.getName();
+    BitVectorFactories.class.getName();
+    CompactHilbertCurve.class.getName();
   }
 }

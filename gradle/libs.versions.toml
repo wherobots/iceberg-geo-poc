@@ -87,6 +87,13 @@ testcontainers = "1.19.5"
 tez010 = "0.10.3"
 tez08 = { strictly = "0.8.4"}  # see rich version usage explanation above
 
+# havasu library versions
+jts-core = "1.19.0"
+jts2geojson = "0.16.1"
+derby = "10.14.2.0"
+jakarta-xml-bind-api = "2.3.2"
+uzaygezen = "0.2"
+
 [libraries]
 activation = { module = "javax.activation:activation", version.ref = "activation" }
 aircompressor = { module = "io.airlift:aircompressor", version.ref = "aircompressor" }
@@ -169,6 +176,13 @@ scala-collection-compat = { module = "org.scala-lang.modules:scala-collection-co
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 snowflake-jdbc = { module = "net.snowflake:snowflake-jdbc", version.ref = "snowflake-jdbc" }
+
+# havasu libraries
+jts-core = { module = "org.locationtech.jts:jts-core", version.ref = "jts-core" }
+jts2geojson = { module = "org.wololo:jts2geojson", version.ref = "jts2geojson" }
+derby = { module = "org.apache.derby:derby", version.ref = "derby" }
+jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml-bind-api" }
+uzaygezen-core = { module = "com.google.uzaygezen:uzaygezen-core", version.ref = "uzaygezen" }
 
 # test libraries
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj-core" }

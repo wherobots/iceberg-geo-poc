@@ -75,6 +75,8 @@ abstract class BaseFile<F>
   private Map<Integer, Long> nanValueCounts = null;
   private Map<Integer, ByteBuffer> lowerBounds = null;
   private Map<Integer, ByteBuffer> upperBounds = null;
+  private Map<Integer, ByteBuffer> geomLowerBounds = null;
+  private Map<Integer, ByteBuffer> geomUpperBounds = null;
   private long[] splitOffsets = null;
   private int[] equalityIds = null;
   private byte[] keyMetadata = null;
@@ -134,6 +136,8 @@ abstract class BaseFile<F>
       Map<Integer, Long> nanValueCounts,
       Map<Integer, ByteBuffer> lowerBounds,
       Map<Integer, ByteBuffer> upperBounds,
+      Map<Integer, ByteBuffer> geomLowerBounds,
+      Map<Integer, ByteBuffer> geomUpperBounds,
       List<Long> splitOffsets,
       int[] equalityFieldIds,
       Integer sortOrderId,
@@ -161,6 +165,8 @@ abstract class BaseFile<F>
     this.nanValueCounts = nanValueCounts;
     this.lowerBounds = SerializableByteBufferMap.wrap(lowerBounds);
     this.upperBounds = SerializableByteBufferMap.wrap(upperBounds);
+    this.geomLowerBounds = SerializableByteBufferMap.wrap(geomLowerBounds);
+    this.geomUpperBounds = SerializableByteBufferMap.wrap(geomUpperBounds);
     this.splitOffsets = ArrayUtil.toLongArray(splitOffsets);
     this.equalityIds = equalityFieldIds;
     this.sortOrderId = sortOrderId;
@@ -192,6 +198,8 @@ abstract class BaseFile<F>
       this.nanValueCounts = copyMap(toCopy.nanValueCounts, requestedColumnIds);
       this.lowerBounds = copyByteBufferMap(toCopy.lowerBounds, requestedColumnIds);
       this.upperBounds = copyByteBufferMap(toCopy.upperBounds, requestedColumnIds);
+      this.geomLowerBounds = copyByteBufferMap(toCopy.geomLowerBounds, requestedColumnIds);
+      this.geomUpperBounds = copyByteBufferMap(toCopy.geomUpperBounds, requestedColumnIds);
     } else {
       this.columnSizes = null;
       this.valueCounts = null;
@@ -199,6 +207,8 @@ abstract class BaseFile<F>
       this.nanValueCounts = null;
       this.lowerBounds = null;
       this.upperBounds = null;
+      this.geomLowerBounds = null;
+      this.geomUpperBounds = null;
     }
     this.fromProjectionPos = toCopy.fromProjectionPos;
     this.keyMetadata =
@@ -320,6 +330,12 @@ abstract class BaseFile<F>
         this.sortOrderId = (Integer) value;
         return;
       case 17:
+        this.geomLowerBounds = SerializableByteBufferMap.wrap((Map<Integer, ByteBuffer>) value);
+        return;
+      case 18:
+        this.geomUpperBounds = SerializableByteBufferMap.wrap((Map<Integer, ByteBuffer>) value);
+        return;
+      case 19:
         this.fileOrdinal = (long) value;
         return;
       default:
@@ -375,6 +391,10 @@ abstract class BaseFile<F>
       case 16:
         return sortOrderId;
       case 17:
+        return geomLowerBounds;
+      case 18:
+        return geomUpperBounds;
+      case 19:
         return fileOrdinal;
       default:
         throw new UnsupportedOperationException("Unknown field ordinal: " + pos);
@@ -454,6 +474,16 @@ abstract class BaseFile<F>
   @Override
   public Map<Integer, ByteBuffer> upperBounds() {
     return toReadableByteBufferMap(upperBounds);
+  }
+
+  @Override
+  public Map<Integer, ByteBuffer> geomLowerBounds() {
+    return toReadableMap(geomLowerBounds);
+  }
+
+  @Override
+  public Map<Integer, ByteBuffer> geomUpperBounds() {
+    return toReadableMap(geomUpperBounds);
   }
 
   @Override
@@ -541,6 +571,8 @@ abstract class BaseFile<F>
         .add("nan_value_counts", nanValueCounts)
         .add("lower_bounds", lowerBounds)
         .add("upper_bounds", upperBounds)
+        .add("geom_lower_bounds", geomLowerBounds)
+        .add("geom_upper_bounds", geomUpperBounds)
         .add("key_metadata", keyMetadata == null ? "null" : "(redacted)")
         .add("split_offsets", splitOffsets == null ? "null" : splitOffsets())
         .add("equality_ids", equalityIds == null ? "null" : equalityFieldIds())

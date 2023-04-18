@@ -274,7 +274,9 @@ class V2Metadata {
         DataFile.KEY_METADATA,
         DataFile.SPLIT_OFFSETS,
         DataFile.EQUALITY_IDS,
-        DataFile.SORT_ORDER_ID);
+        DataFile.SORT_ORDER_ID,
+        DataFile.GEOM_LOWER_BOUNDS,
+        DataFile.GEOM_UPPER_BOUNDS);
   }
 
   static class IndexedManifestEntry<F extends ContentFile<F>>
@@ -448,6 +450,10 @@ class V2Metadata {
           return wrapped.equalityFieldIds();
         case 15:
           return wrapped.sortOrderId();
+        case 16:
+          return wrapped.geomLowerBounds();
+        case 17:
+          return wrapped.geomUpperBounds();
       }
       throw new IllegalArgumentException("Unknown field ordinal: " + pos);
     }
@@ -525,6 +531,16 @@ class V2Metadata {
     @Override
     public Map<Integer, ByteBuffer> upperBounds() {
       return wrapped.upperBounds();
+    }
+
+    @Override
+    public Map<Integer, ByteBuffer> geomLowerBounds() {
+      return wrapped.geomLowerBounds();
+    }
+
+    @Override
+    public Map<Integer, ByteBuffer> geomUpperBounds() {
+      return wrapped.geomUpperBounds();
     }
 
     @Override

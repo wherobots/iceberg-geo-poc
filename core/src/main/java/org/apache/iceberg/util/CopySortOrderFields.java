@@ -23,6 +23,7 @@ import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.transforms.SortOrderVisitor;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
 
 class CopySortOrderFields implements SortOrderVisitor<Void> {
   private final SortOrder.Builder builder;
@@ -76,6 +77,17 @@ class CopySortOrderFields implements SortOrderVisitor<Void> {
   @Override
   public Void hour(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     builder.sortBy(Expressions.hour(sourceName), direction, nullOrder);
+    return null;
+  }
+
+  @Override
+  public Void hilbert(
+      String sourceName,
+      int sourceId,
+      HilbertCurve2D curve,
+      SortDirection direction,
+      NullOrder nullOrder) {
+    builder.sortBy(Expressions.hilbert(sourceName, curve), direction, nullOrder);
     return null;
   }
 }

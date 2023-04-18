@@ -609,6 +609,8 @@ public class TestHelpers {
     private final Map<Integer, Long> nanValueCounts;
     private final Map<Integer, ByteBuffer> lowerBounds;
     private final Map<Integer, ByteBuffer> upperBounds;
+    private final Map<Integer, ByteBuffer> geomLowerBounds;
+    private final Map<Integer, ByteBuffer> geomUpperBounds;
 
     public TestDataFile(String path, StructLike partition, long recordCount) {
       this(path, partition, recordCount, null, null, null, null, null);
@@ -623,6 +625,30 @@ public class TestHelpers {
         Map<Integer, Long> nanValueCounts,
         Map<Integer, ByteBuffer> lowerBounds,
         Map<Integer, ByteBuffer> upperBounds) {
+      this(
+          path,
+          partition,
+          recordCount,
+          valueCounts,
+          nullValueCounts,
+          nanValueCounts,
+          lowerBounds,
+          upperBounds,
+          null,
+          null);
+    }
+
+    public TestDataFile(
+        String path,
+        StructLike partition,
+        long recordCount,
+        Map<Integer, Long> valueCounts,
+        Map<Integer, Long> nullValueCounts,
+        Map<Integer, Long> nanValueCounts,
+        Map<Integer, ByteBuffer> lowerBounds,
+        Map<Integer, ByteBuffer> upperBounds,
+        Map<Integer, ByteBuffer> geomLowerBounds,
+        Map<Integer, ByteBuffer> geomUpperBounds) {
       this.path = path;
       this.partition = partition;
       this.recordCount = recordCount;
@@ -631,6 +657,8 @@ public class TestHelpers {
       this.nanValueCounts = nanValueCounts;
       this.lowerBounds = lowerBounds;
       this.upperBounds = upperBounds;
+      this.geomLowerBounds = geomLowerBounds;
+      this.geomUpperBounds = geomUpperBounds;
     }
 
     @Override
@@ -696,6 +724,16 @@ public class TestHelpers {
     @Override
     public Map<Integer, ByteBuffer> upperBounds() {
       return upperBounds;
+    }
+
+    @Override
+    public Map<Integer, ByteBuffer> geomLowerBounds() {
+      return geomLowerBounds;
+    }
+
+    @Override
+    public Map<Integer, ByteBuffer> geomUpperBounds() {
+      return geomUpperBounds;
     }
 
     @Override

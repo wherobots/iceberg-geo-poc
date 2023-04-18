@@ -120,13 +120,17 @@ if (file("${rootDir}/iceberg-build.properties").exists()) {
 }
 
 def projectVersion = getProjectVersion()
-final REVAPI_PROJECTS = ["iceberg-api", "iceberg-core", "iceberg-parquet", "iceberg-orc", "iceberg-common", "iceberg-data"]
+final REVAPI_PROJECTS = []
 
 allprojects {
-  group = "org.apache.iceberg"
+  group = "com.wherobots.havasu"
   version = projectVersion
   repositories {
-    mavenCentral()
+    mavenCentral() {
+      content {
+        excludeModule("javax.media", "jai_core")
+      }
+    }
     mavenLocal()
   }
 }
@@ -265,6 +269,9 @@ project(':iceberg-bundled-guava') {
       exclude group: 'com.google.errorprone'
       exclude group: 'com.google.j2objc'
     }
+    compileOnly(libs.uzaygezen.core) {
+      exclude group: '*'
+    }
   }
 
   shadowJar {
@@ -284,6 +291,7 @@ project(':iceberg-bundled-guava') {
     }
 
     relocate 'com.google.common', 'org.apache.iceberg.relocated.com.google.common'
+    relocate 'com.google.uzaygezen', 'org.apache.iceberg.relocated.com.google.uzaygezen'
 
     minimize()
   }
@@ -300,8 +308,12 @@ project(':iceberg-api') {
 
   dependencies {
     implementation project(path: ':iceberg-bundled-guava', configuration: 'shadow')
+    api libs.jts.core
+    api libs.jts2geojson
     compileOnly libs.errorprone.annotations
     compileOnly libs.findbugs.jsr305
+    annotationProcessor libs.immutables.value
+    compileOnly libs.immutables.value
     testImplementation libs.avro.avro
     testImplementation libs.esotericsoftware.kryo
     testImplementation libs.awaitility
@@ -800,6 +812,7 @@ project(':iceberg-parquet') {
     }
 
     compileOnly libs.avro.avro
+    implementation libs.jts2geojson
     compileOnly(libs.hadoop2.client) {
       exclude group: 'org.apache.avro', module: 'avro'
     }

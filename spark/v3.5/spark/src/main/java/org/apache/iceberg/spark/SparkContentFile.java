@@ -195,6 +195,16 @@ public abstract class SparkContentFile<F> implements ContentFile<F> {
   }
 
   @Override
+  public Map<Integer, ByteBuffer> geomLowerBounds() {
+    return null;
+  }
+
+  @Override
+  public Map<Integer, ByteBuffer> geomUpperBounds() {
+    return null;
+  }
+
+  @Override
   public ByteBuffer keyMetadata() {
     return convert(keyMetadataType, wrapped.get(keyMetadataPosition));
   }

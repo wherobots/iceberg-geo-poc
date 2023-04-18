@@ -84,6 +84,18 @@ public interface DataFile extends ContentFile<DataFile> {
           "upper_bounds",
           MapType.ofRequired(129, 130, IntegerType.get(), BinaryType.get()),
           "Map of column id to upper bound");
+  Types.NestedField GEOM_LOWER_BOUNDS =
+      optional(
+          1250,
+          "geom_lower_bounds",
+          MapType.ofRequired(1260, 1270, IntegerType.get(), BinaryType.get()),
+          "Map of geometry column id to lower bound (lower-left corner)");
+  Types.NestedField GEOM_UPPER_BOUNDS =
+      optional(
+          1280,
+          "geom_upper_bounds",
+          MapType.ofRequired(1290, 1300, IntegerType.get(), BinaryType.get()),
+          "Map of geometry column id to upper bound (lower-left corner)");
   Types.NestedField KEY_METADATA =
       optional(131, "key_metadata", BinaryType.get(), "Encryption key metadata blob");
   Types.NestedField SPLIT_OFFSETS =
@@ -123,7 +135,9 @@ public interface DataFile extends ContentFile<DataFile> {
         KEY_METADATA,
         SPLIT_OFFSETS,
         EQUALITY_IDS,
-        SORT_ORDER_ID);
+        SORT_ORDER_ID,
+        GEOM_LOWER_BOUNDS,
+        GEOM_UPPER_BOUNDS);
   }
 
   /** @return the content stored in the file; one of DATA, POSITION_DELETES, or EQUALITY_DELETES */

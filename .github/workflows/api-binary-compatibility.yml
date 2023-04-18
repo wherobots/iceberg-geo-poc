@@ -25,10 +25,6 @@ on:
       - '0.**'
     tags:
       - 'apache-iceberg-**'
-  pull_request:
-    paths:
-      - 'api/**'
-      - '.palantir/revapi.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

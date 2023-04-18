@@ -82,6 +82,17 @@ public interface ContentFile<F> {
   Map<Integer, ByteBuffer> upperBounds();
 
   /**
+   * Returns if collected, map from geometry column ID to geometry lower bounds (lower-left corner),
+   * null otherwise .
+   */
+  Map<Integer, ByteBuffer> geomLowerBounds();
+  /**
+   * Returns if collected, map from geometry column ID to geometry upper bounds (upper-right
+   * corner), null otherwise .
+   */
+  Map<Integer, ByteBuffer> geomUpperBounds();
+
+  /**
    * Returns metadata about how this file is encrypted, or null if the file is stored in plain text.
    */
   ByteBuffer keyMetadata();

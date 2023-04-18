@@ -30,11 +30,16 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.ExpressionVisitors.BoundExpressionVisitor;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.types.Conversions;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types.StructType;
 import org.apache.iceberg.util.BinaryUtil;
 import org.apache.iceberg.util.NaNUtil;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 
 /**
  * Evaluates an {@link Expression} on a {@link DataFile} to test whether rows in the file may match.
@@ -53,6 +58,8 @@ import org.apache.iceberg.util.NaNUtil;
  */
 public class InclusiveMetricsEvaluator {
   private static final int IN_PREDICATE_LIMIT = 200;
+
+  private static final GeometryFactory factory = new GeometryFactory();
 
   private final Expression expr;
 
@@ -85,6 +92,8 @@ public class InclusiveMetricsEvaluator {
     private Map<Integer, Long> nanCounts = null;
     private Map<Integer, ByteBuffer> lowerBounds = null;
     private Map<Integer, ByteBuffer> upperBounds = null;
+    private Map<Integer, ByteBuffer> geomLowerBounds = null;
+    private Map<Integer, ByteBuffer> geomUpperBounds = null;
 
     private boolean eval(ContentFile<?> file) {
       if (file.recordCount() == 0) {
@@ -103,6 +112,8 @@ public class InclusiveMetricsEvaluator {
       this.nanCounts = file.nanValueCounts();
       this.lowerBounds = file.lowerBounds();
       this.upperBounds = file.upperBounds();
+      this.geomLowerBounds = file.geomLowerBounds();
+      this.geomUpperBounds = file.geomUpperBounds();
 
       return ExpressionVisitors.visitEvaluator(expr, this);
     }
@@ -462,6 +473,66 @@ public class InclusiveMetricsEvaluator {
             // both bounds match the prefix, so all rows must match the prefix and therefore do not
             // satisfy
             // the predicate
+            return ROWS_CANNOT_MATCH;
+          }
+        }
+      }
+
+      return ROWS_MIGHT_MATCH;
+    }
+
+    @Override
+    public <T> Boolean stIntersects(BoundReference<T> ref, Literal<T> lit) {
+      Preconditions.checkArgument(
+          ref.type().typeId() == Type.TypeID.GEOMETRY,
+          "Cannot evaluate stIntersects predicate on non-geometry column");
+      Integer id = ref.fieldId();
+
+      if (containsNullsOnly(id)) {
+        return ROWS_CANNOT_MATCH;
+      }
+
+      Geometry queryWindow = (Geometry) lit.value();
+      if (geomLowerBounds != null
+          && geomUpperBounds != null
+          && geomLowerBounds.containsKey(id)
+          && geomUpperBounds.containsKey(id)) {
+        Geometry lowerBound = Conversions.fromByteBuffer(ref.type(), geomLowerBounds.get(id));
+        Geometry upperBound = Conversions.fromByteBuffer(ref.type(), geomUpperBounds.get(id));
+        if (lowerBound != null && upperBound != null) {
+          Envelope bound = new Envelope(lowerBound.getCoordinate(), upperBound.getCoordinate());
+          Geometry boundGeom = factory.toGeometry(bound);
+          if (!boundGeom.intersects(queryWindow)) {
+            return ROWS_CANNOT_MATCH;
+          }
+        }
+      }
+
+      return ROWS_MIGHT_MATCH;
+    }
+
+    @Override
+    public <T> Boolean stCovers(BoundReference<T> ref, Literal<T> lit) {
+      Preconditions.checkArgument(
+          ref.type().typeId() == Type.TypeID.GEOMETRY,
+          "Cannot evaluate stIntersects predicate on non-geometry column");
+      Integer id = ref.fieldId();
+
+      if (containsNullsOnly(id)) {
+        return ROWS_CANNOT_MATCH;
+      }
+
+      Geometry queryWindow = (Geometry) lit.value();
+      if (geomLowerBounds != null
+          && geomUpperBounds != null
+          && geomLowerBounds.containsKey(id)
+          && geomUpperBounds.containsKey(id)) {
+        Geometry lowerBound = Conversions.fromByteBuffer(ref.type(), geomLowerBounds.get(id));
+        Geometry upperBound = Conversions.fromByteBuffer(ref.type(), geomUpperBounds.get(id));
+        if (lowerBound != null && upperBound != null) {
+          Envelope bound = new Envelope(lowerBound.getCoordinate(), upperBound.getCoordinate());
+          Geometry boundGeom = factory.toGeometry(bound);
+          if (!boundGeom.covers(queryWindow)) {
             return ROWS_CANNOT_MATCH;
           }
         }

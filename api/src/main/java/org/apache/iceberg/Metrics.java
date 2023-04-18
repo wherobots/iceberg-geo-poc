@@ -37,6 +37,8 @@ public class Metrics implements Serializable {
   private Map<Integer, Long> nanValueCounts = null;
   private Map<Integer, ByteBuffer> lowerBounds = null;
   private Map<Integer, ByteBuffer> upperBounds = null;
+  private Map<Integer, ByteBuffer> geomLowerBounds = null;
+  private Map<Integer, ByteBuffer> geomUpperBounds = null;
 
   public Metrics() {}
 
@@ -68,6 +70,27 @@ public class Metrics implements Serializable {
     this.nanValueCounts = nanValueCounts;
     this.lowerBounds = lowerBounds;
     this.upperBounds = upperBounds;
+  }
+
+  public Metrics(
+      Long rowCount,
+      Map<Integer, Long> columnSizes,
+      Map<Integer, Long> valueCounts,
+      Map<Integer, Long> nullValueCounts,
+      Map<Integer, Long> nanValueCounts,
+      Map<Integer, ByteBuffer> lowerBounds,
+      Map<Integer, ByteBuffer> upperBounds,
+      Map<Integer, ByteBuffer> geomLowerBounds,
+      Map<Integer, ByteBuffer> geomUpperBounds) {
+    this.rowCount = rowCount;
+    this.columnSizes = columnSizes;
+    this.valueCounts = valueCounts;
+    this.nullValueCounts = nullValueCounts;
+    this.nanValueCounts = nanValueCounts;
+    this.lowerBounds = lowerBounds;
+    this.upperBounds = upperBounds;
+    this.geomLowerBounds = geomLowerBounds;
+    this.geomUpperBounds = geomUpperBounds;
   }
 
   /**
@@ -139,6 +162,24 @@ public class Metrics implements Serializable {
   }
 
   /**
+   * Get the non-null lower bound values for all geometry fields in a file.
+   *
+   * @return a Map of fieldId to the lower bound value (lower-left corner) as a ByteBuffer
+   */
+  public Map<Integer, ByteBuffer> geomLowerBounds() {
+    return geomLowerBounds;
+  }
+
+  /**
+   * Get the non-null upper bound values for all geometry fields in a file.
+   *
+   * @return a Map of fieldId to the upper bound value (upper-right corner) as a ByteBuffer
+   */
+  public Map<Integer, ByteBuffer> geomUpperBounds() {
+    return geomUpperBounds;
+  }
+
+  /**
    * Implemented the method to enable serialization of ByteBuffers.
    *
    * @param out The stream where to write
@@ -153,6 +194,8 @@ public class Metrics implements Serializable {
 
     writeByteBufferMap(out, lowerBounds);
     writeByteBufferMap(out, upperBounds);
+    writeByteBufferMap(out, geomLowerBounds);
+    writeByteBufferMap(out, geomUpperBounds);
   }
 
   private static void writeByteBufferMap(
@@ -188,6 +231,8 @@ public class Metrics implements Serializable {
 
     lowerBounds = readByteBufferMap(in);
     upperBounds = readByteBufferMap(in);
+    geomLowerBounds = readByteBufferMap(in);
+    geomUpperBounds = readByteBufferMap(in);
   }
 
   private static Map<Integer, ByteBuffer> readByteBufferMap(ObjectInputStream in)

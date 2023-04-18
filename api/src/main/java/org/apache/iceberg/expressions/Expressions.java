@@ -24,6 +24,8 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.transforms.Transform;
 import org.apache.iceberg.transforms.Transforms;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
+import org.locationtech.jts.geom.Geometry;
 
 /** Factory methods for creating {@link Expression expressions}. */
 public class Expressions {
@@ -99,6 +101,23 @@ public class Expressions {
 
   public static <T> UnboundTerm<T> truncate(String name, int width) {
     return new UnboundTransform<>(ref(name), Transforms.truncate(width));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> UnboundTerm<T> hilbert(String name, int resolution) {
+    return new UnboundTransform<>(ref(name), (Transform<?, T>) Transforms.hilbert(resolution));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> UnboundTerm<T> hilbert(String name, HilbertCurve2D curve) {
+    return new UnboundTransform<>(ref(name), (Transform<?, T>) Transforms.hilbert(curve));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> UnboundTerm<T> hilbert(
+      String name, int resolution, double minX, double minY, double maxX, double maxY) {
+    return new UnboundTransform<>(
+        ref(name), (Transform<?, T>) Transforms.hilbert(resolution, minX, minY, maxX, maxY));
   }
 
   public static <T> UnboundPredicate<T> isNull(String name) {
@@ -195,6 +214,23 @@ public class Expressions {
 
   public static UnboundPredicate<String> notStartsWith(UnboundTerm<String> expr, String value) {
     return new UnboundPredicate<>(Expression.Operation.NOT_STARTS_WITH, expr, value);
+  }
+
+  public static UnboundPredicate<Geometry> stIntersects(String name, Geometry value) {
+    return new UnboundPredicate<>(Expression.Operation.ST_INTERSECTS, ref(name), value);
+  }
+
+  public static UnboundPredicate<Geometry> stIntersects(
+      UnboundTerm<Geometry> expr, Geometry value) {
+    return new UnboundPredicate<>(Expression.Operation.ST_INTERSECTS, expr, value);
+  }
+
+  public static UnboundPredicate<Geometry> stCovers(String name, Geometry value) {
+    return new UnboundPredicate<>(Expression.Operation.ST_COVERS, ref(name), value);
+  }
+
+  public static UnboundPredicate<Geometry> stCovers(UnboundTerm<Geometry> expr, Geometry value) {
+    return new UnboundPredicate<>(Expression.Operation.ST_COVERS, expr, value);
   }
 
   public static <T> UnboundPredicate<T> in(String name, T... values) {

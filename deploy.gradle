@@ -73,7 +73,7 @@ subprojects {
 
     publishing {
       publications {
-        apache(MavenPublication) {
+        gpr(MavenPublication) {
           if (isBom) {
             from components.javaPlatform
           } else {
@@ -94,10 +94,10 @@ subprojects {
             }
           }
 
-          groupId = 'org.apache.iceberg'
+          groupId = 'com.wherobots.havasu'
           pom {
-            name = 'Apache Iceberg'
-            description = 'A table format for huge analytic datasets'
+            name = 'Wherobots Havasu.iceberg'
+            description = 'Apache Iceberg with geospatial support'
             url = 'https://iceberg.apache.org'
             licenses {
               license {
@@ -115,7 +115,7 @@ subprojects {
             }
             issueManagement {
               system = 'GitHub'
-              url = 'https://github.com/apache/iceberg/issues'
+              url = 'https://github.com/wherobots/havasu-iceberg/issues'
             }
           }
         }
@@ -124,15 +124,10 @@ subprojects {
       repositories {
         maven {
           credentials {
-            username project.hasProperty('mavenUser') ? "$mavenUser" : ""
-            password project.hasProperty('mavenPassword') ? "$mavenPassword" : ""
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
           }
-          // upload to the releases repository using ./gradlew -Prelease publish
-          def apacheSnapshotsRepoUrl = 'https://repository.apache.org/content/repositories/snapshots'
-          def apacheReleasesRepoUrl = 'https://repository.apache.org/service/local/staging/deploy/maven2'
-          def snapshotsRepoUrl = project.hasProperty('mavenSnapshotsRepo') ? "$mavenSnapshotsRepo" : "$apacheSnapshotsRepoUrl"
-          def releasesRepoUrl = project.hasProperty('mavenReleasesRepo') ? "$mavenReleasesRepo" : "$apacheReleasesRepoUrl"
-          url = project.hasProperty('release') ? releasesRepoUrl : snapshotsRepoUrl
+          url = uri("https://maven.pkg.github.com/wherobots/packages")
         }
       }
     }
