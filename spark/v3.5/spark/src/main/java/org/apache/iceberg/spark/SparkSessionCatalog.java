@@ -358,7 +358,9 @@ public class SparkSessionCatalog<T extends TableCatalog & FunctionCatalog & Supp
   }
 
   private boolean useIceberg(String provider) {
-    if (provider == null || "iceberg".equalsIgnoreCase(provider)) {
+    if (provider == null
+        || "iceberg".equalsIgnoreCase(provider)
+        || "havasu.iceberg".equalsIgnoreCase(provider)) {
       return true;
     } else if (createParquetAsIceberg && "parquet".equalsIgnoreCase(provider)) {
       return true;

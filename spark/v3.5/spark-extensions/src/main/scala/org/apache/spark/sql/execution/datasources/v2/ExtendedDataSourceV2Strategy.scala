@@ -50,6 +50,7 @@ import org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrderi
 import org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable
 import org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties
 import org.apache.spark.sql.catalyst.plans.logical.UnsetViewProperties
+import org.apache.spark.sql.catalyst.plans.logical.havasu.SetGeometryFields
 import org.apache.spark.sql.catalyst.plans.logical.views.CreateIcebergView
 import org.apache.spark.sql.catalyst.plans.logical.views.DropIcebergView
 import org.apache.spark.sql.catalyst.plans.logical.views.ResolvedV2View
@@ -59,6 +60,7 @@ import org.apache.spark.sql.connector.catalog.TableCatalog
 import org.apache.spark.sql.connector.catalog.ViewCatalog
 import org.apache.spark.sql.execution.OrderAwareCoalesceExec
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.datasources.v2.havasu.SetGeometryFieldsExec
 import scala.jdk.CollectionConverters._
 
 case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy with PredicateHelper {
@@ -96,6 +98,9 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy wi
 
     case DropIdentifierFields(IcebergCatalogAndIdentifier(catalog, ident), fields) =>
       DropIdentifierFieldsExec(catalog, ident, fields) :: Nil
+
+    case SetGeometryFields(IcebergCatalogAndIdentifier(catalog, ident), fields) =>
+      SetGeometryFieldsExec(catalog, ident, fields) :: Nil
 
     case SetWriteDistributionAndOrdering(
         IcebergCatalogAndIdentifier(catalog, ident), distributionMode, ordering) =>

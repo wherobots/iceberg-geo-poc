@@ -34,6 +34,7 @@ import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.parser.ParserInterface
+import org.apache.spark.sql.catalyst.parser.ParserUtils.string
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser._
 import org.apache.spark.sql.catalyst.plans.logical.AddPartitionField
@@ -53,6 +54,7 @@ import org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField
 import org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields
 import org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering
 import org.apache.spark.sql.catalyst.plans.logical.TagOptions
+import org.apache.spark.sql.catalyst.plans.logical.havasu.SetGeometryFields
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.expressions
@@ -208,6 +210,20 @@ class IcebergSqlExtensionsAstBuilder(delegate: ParserInterface) extends IcebergS
     DropIdentifierFields(
       typedVisit[Seq[String]](ctx.multipartIdentifier),
       toSeq(ctx.fieldList.fields).map(_.getText))
+  }
+
+  /**
+   * Create an SET GEOMETRY FIELDS logical command.
+   */
+  override def visitSetGeometryFields(ctx: SetGeometryFieldsContext): AnyRef = withOrigin(ctx) {
+    val tableIdentifier = typedVisit[Seq[String]](ctx.tableName)
+    val columnNamesAndGeometryFormats = ctx.name.asScala.zip(ctx.geometryFormat.asScala)
+    val geometryColumnSpecs = columnNamesAndGeometryFormats.map { case (nameCtx, geometryFormatCtx) =>
+      val name = nameCtx.identifier.getText
+      val geometryFormat = string(geometryFormatCtx)
+      (name, geometryFormat)
+    }
+    SetGeometryFields(tableIdentifier, geometryColumnSpecs)
   }
 
   /**

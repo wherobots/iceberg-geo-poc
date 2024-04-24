@@ -47,6 +47,7 @@ import org.apache.iceberg.types.Types.StructType;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeSet;
 import org.apache.iceberg.util.TableScanUtil;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.connector.read.SupportsReportPartitioning;
@@ -71,14 +72,14 @@ abstract class SparkPartitioningAwareScan<T extends PartitionScanTask> extends S
   private Transform[] groupingKeyTransforms = null; // lazy cache of grouping key transforms
 
   SparkPartitioningAwareScan(
-      SparkSession spark,
+      JavaSparkContext sparkContext,
       Table table,
       Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>> scan,
       SparkReadConf readConf,
       Schema expectedSchema,
       List<Expression> filters,
       Supplier<ScanReport> scanReportSupplier) {
-    super(spark, table, readConf, expectedSchema, filters, scanReportSupplier);
+    super(sparkContext, table, readConf, expectedSchema, filters, scanReportSupplier);
 
     this.scan = scan;
     this.preserveDataGrouping = readConf.preserveDataGrouping();
@@ -88,6 +89,24 @@ abstract class SparkPartitioningAwareScan<T extends PartitionScanTask> extends S
       this.tasks = Collections.emptyList();
       this.taskGroups = Collections.emptyList();
     }
+  }
+
+  SparkPartitioningAwareScan(
+      SparkSession spark,
+      Table table,
+      Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>> scan,
+      SparkReadConf readConf,
+      Schema expectedSchema,
+      List<Expression> filters,
+      Supplier<ScanReport> scanReportSupplier) {
+    this(
+        JavaSparkContext.fromSparkContext(spark.sparkContext()),
+        table,
+        scan,
+        readConf,
+        expectedSchema,
+        filters,
+        scanReportSupplier);
   }
 
   protected abstract Class<T> taskJavaClass();

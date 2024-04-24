@@ -114,21 +114,24 @@ class SparkFileWriterFactory extends BaseFileWriterFactory<InternalRow> {
 
   @Override
   protected void configureDataWrite(Parquet.DataWriteBuilder builder) {
-    builder.createWriterFunc(msgType -> SparkParquetWriters.buildWriter(dataSparkType(), msgType));
+    builder.createWriterFunc(
+        msgType -> SparkParquetWriters.buildWriter(dataSparkType(), msgType, dataSchema()));
     builder.setAll(writeProperties);
   }
 
   @Override
   protected void configureEqualityDelete(Parquet.DeleteWriteBuilder builder) {
     builder.createWriterFunc(
-        msgType -> SparkParquetWriters.buildWriter(equalityDeleteSparkType(), msgType));
+        msgType ->
+            SparkParquetWriters.buildWriter(equalityDeleteSparkType(), msgType, dataSchema()));
     builder.setAll(writeProperties);
   }
 
   @Override
   protected void configurePositionDelete(Parquet.DeleteWriteBuilder builder) {
     builder.createWriterFunc(
-        msgType -> SparkParquetWriters.buildWriter(positionDeleteSparkType(), msgType));
+        msgType ->
+            SparkParquetWriters.buildWriter(positionDeleteSparkType(), msgType, dataSchema()));
     builder.transformPaths(path -> UTF8String.fromString(path.toString()));
     builder.setAll(writeProperties);
   }

@@ -37,7 +37,8 @@ public class SparkFunctions {
           "days", new DaysFunction(),
           "hours", new HoursFunction(),
           "bucket", new BucketFunction(),
-          "truncate", new TruncateFunction());
+          "truncate", new TruncateFunction(),
+          "hilbert", new HilbertFunction());
 
   private static final Map<Class<?>, UnboundFunction> CLASS_TO_FUNCTIONS =
       ImmutableMap.of(

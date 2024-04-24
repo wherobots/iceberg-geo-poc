@@ -47,12 +47,16 @@ public abstract class SparkContentFile<F> implements ContentFile<F> {
   private final int nanValueCountsPosition;
   private final int lowerBoundsPosition;
   private final int upperBoundsPosition;
+  private final int geomLowerBoundsPosition;
+  private final int geomUpperBoundsPosition;
   private final int keyMetadataPosition;
   private final int splitOffsetsPosition;
   private final int sortOrderIdPosition;
   private final int equalityIdsPosition;
   private final Type lowerBoundsType;
   private final Type upperBoundsType;
+  private final Type geomLowerBoundsType;
+  private final Type geomUpperBoundsType;
   private final Type keyMetadataType;
 
   private final SparkStructLike wrappedPartition;
@@ -62,6 +66,8 @@ public abstract class SparkContentFile<F> implements ContentFile<F> {
   SparkContentFile(Types.StructType type, Types.StructType projectedType, StructType sparkType) {
     this.lowerBoundsType = type.fieldType(DataFile.LOWER_BOUNDS.name());
     this.upperBoundsType = type.fieldType(DataFile.UPPER_BOUNDS.name());
+    this.geomLowerBoundsType = type.fieldType(DataFile.GEOM_LOWER_BOUNDS.name());
+    this.geomUpperBoundsType = type.fieldType(DataFile.GEOM_UPPER_BOUNDS.name());
     this.keyMetadataType = type.fieldType(DataFile.KEY_METADATA.name());
 
     Types.StructType partitionType = type.fieldType(DataFile.PARTITION_NAME).asStructType();
@@ -95,6 +101,8 @@ public abstract class SparkContentFile<F> implements ContentFile<F> {
     this.nanValueCountsPosition = positions.get(DataFile.NAN_VALUE_COUNTS.name());
     this.lowerBoundsPosition = positions.get(DataFile.LOWER_BOUNDS.name());
     this.upperBoundsPosition = positions.get(DataFile.UPPER_BOUNDS.name());
+    this.geomLowerBoundsPosition = positions.get(DataFile.GEOM_UPPER_BOUNDS.name());
+    this.geomUpperBoundsPosition = positions.get(DataFile.GEOM_UPPER_BOUNDS.name());
     this.keyMetadataPosition = positions.get(DataFile.KEY_METADATA.name());
     this.splitOffsetsPosition = positions.get(DataFile.SPLIT_OFFSETS.name());
     this.sortOrderIdPosition = positions.get(DataFile.SORT_ORDER_ID.name());
@@ -196,12 +204,20 @@ public abstract class SparkContentFile<F> implements ContentFile<F> {
 
   @Override
   public Map<Integer, ByteBuffer> geomLowerBounds() {
-    return null;
+    Map<?, ?> geomLowerBounds =
+        wrapped.isNullAt(geomLowerBoundsPosition)
+            ? null
+            : wrapped.getJavaMap(geomLowerBoundsPosition);
+    return convert(geomLowerBoundsType, geomLowerBounds);
   }
 
   @Override
   public Map<Integer, ByteBuffer> geomUpperBounds() {
-    return null;
+    Map<?, ?> geomUpperBounds =
+        wrapped.isNullAt(geomUpperBoundsPosition)
+            ? null
+            : wrapped.getJavaMap(geomUpperBoundsPosition);
+    return convert(geomUpperBoundsType, geomUpperBounds);
   }
 
   @Override

@@ -123,12 +123,17 @@ class IcebergSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserI
     if (isIcebergCommand(sqlTextAfterSubstitution)) {
       parse(sqlTextAfterSubstitution) { parser => astBuilder.visit(parser.singleStatement()) }.asInstanceOf[LogicalPlan]
     } else {
-      RewriteViewCommands(SparkSession.active).apply(delegate.parsePlan(sqlText))
+      RewriteViewCommands(SparkSession.active).apply(
+        if (isDDLWithGeospatialColumnTypes(sqlText)) {
+          HavasuIcebergSqlParser.parsePlan(sqlText)
+        } else {
+          delegate.parsePlan(sqlText)
+        })
     }
   }
 
-  private def isIcebergCommand(sqlText: String): Boolean = {
-    val normalized = sqlText.toLowerCase(Locale.ROOT).trim()
+  private def normalizedSql(sqlText: String): String =
+    sqlText.toLowerCase(Locale.ROOT).trim()
       // Strip simple SQL comments that terminate a line, e.g. comments starting with `--` .
       .replaceAll("--.*?\\n", " ")
       // Strip newlines.
@@ -137,7 +142,22 @@ class IcebergSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserI
       // comments that span multiple lines are caught.
       .replaceAll("/\\*.*?\\*/", " ")
       .trim()
-    normalized.startsWith("call") || (
+
+  private def isDDLWithGeospatialColumnTypes(sqlText: String): Boolean = {
+    val normalized = normalizedSql(sqlText)
+    val isDDL = normalized.startsWith("create table") ||
+      normalized.startsWith("create or replace table") ||
+      (normalized.startsWith("alter table") && (
+      normalized.contains("add column") ||
+        normalized.contains("alter column") ||
+        normalized.contains("change column") ||
+        normalized.contains("replace column")))
+    isDDL && (normalized.contains("geometry") || normalized.contains("raster"))
+  }
+
+  private def isIcebergCommand(sqlText: String): Boolean = {
+    val normalized = normalizedSql(sqlText)
+    normalized.startsWith("call") || normalized.startsWith("create spatial index") || (
         normalized.startsWith("alter table") && (
             normalized.contains("add partition field") ||
             normalized.contains("drop partition field") ||
@@ -148,6 +168,7 @@ class IcebergSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserI
             normalized.contains("write unordered") ||
             normalized.contains("set identifier fields") ||
             normalized.contains("drop identifier fields") ||
+            normalized.contains("set geometry fields") ||
             isSnapshotRefDdl(normalized)))
   }
 

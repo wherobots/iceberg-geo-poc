@@ -49,6 +49,7 @@ import org.apache.iceberg.spark.SparkReadConf;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.SparkV2Filters;
 import org.apache.iceberg.util.SnapshotUtil;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.expressions.NamedReference;
 import org.apache.spark.sql.connector.expressions.filter.Predicate;
@@ -70,14 +71,14 @@ class SparkBatchQueryScan extends SparkPartitioningAwareScan<PartitionScanTask>
   private final List<Expression> runtimeFilterExpressions;
 
   SparkBatchQueryScan(
-      SparkSession spark,
+      JavaSparkContext sparkContext,
       Table table,
       Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>> scan,
       SparkReadConf readConf,
       Schema expectedSchema,
       List<Expression> filters,
       Supplier<ScanReport> scanReportSupplier) {
-    super(spark, table, scan, readConf, expectedSchema, filters, scanReportSupplier);
+    super(sparkContext, table, scan, readConf, expectedSchema, filters, scanReportSupplier);
 
     this.snapshotId = readConf.snapshotId();
     this.startSnapshotId = readConf.startSnapshotId();
@@ -85,6 +86,39 @@ class SparkBatchQueryScan extends SparkPartitioningAwareScan<PartitionScanTask>
     this.asOfTimestamp = readConf.asOfTimestamp();
     this.tag = readConf.tag();
     this.runtimeFilterExpressions = Lists.newArrayList();
+  }
+
+  SparkBatchQueryScan(
+      SparkSession spark,
+      Table table,
+      Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>> scan,
+      SparkReadConf readConf,
+      Schema expectedSchema,
+      List<Expression> filters,
+      Supplier<ScanReport> scanReportSupplier) {
+    this(
+        JavaSparkContext.fromSparkContext(spark.sparkContext()),
+        table,
+        scan,
+        readConf,
+        expectedSchema,
+        filters,
+        scanReportSupplier);
+  }
+
+  public SparkScan withExpressionsInternal(List<Expression> newFilterExpressions) {
+    Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>> newScan = this.scan();
+    for (Expression expr : newFilterExpressions) {
+      newScan = (Scan<?, ? extends ScanTask, ? extends ScanTaskGroup<?>>) newScan.filter(expr);
+    }
+    return new SparkBatchQueryScan(
+        this.sparkContext(),
+        this.table(),
+        newScan,
+        this.readConf(),
+        this.expectedSchema(),
+        newFilterExpressions,
+        scanReportSupplier());
   }
 
   Long snapshotId() {

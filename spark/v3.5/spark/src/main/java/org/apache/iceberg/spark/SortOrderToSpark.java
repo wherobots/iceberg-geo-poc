@@ -23,6 +23,7 @@ import org.apache.iceberg.NullOrder;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.transforms.SortOrderVisitor;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.NullOrdering;
 import org.apache.spark.sql.connector.expressions.SortOrder;
@@ -80,6 +81,26 @@ class SortOrderToSpark implements SortOrderVisitor<SortOrder> {
   public SortOrder hour(String sourceName, int id, SortDirection direction, NullOrder nullOrder) {
     return Expressions.sort(
         Expressions.hours(quotedName(id)), toSpark(direction), toSpark(nullOrder));
+  }
+
+  @Override
+  public SortOrder hilbert(
+      String sourceName,
+      int sourceId,
+      HilbertCurve2D curve,
+      SortDirection direction,
+      NullOrder nullOrder) {
+    return Expressions.sort(
+        Expressions.apply(
+            "hilbert",
+            Expressions.column(quotedName(sourceId)),
+            Expressions.literal(curve.resolution()),
+            Expressions.literal(curve.minX()),
+            Expressions.literal(curve.minY()),
+            Expressions.literal(curve.maxX()),
+            Expressions.literal(curve.maxY())),
+        toSpark(direction),
+        toSpark(nullOrder));
   }
 
   private String quotedName(int id) {

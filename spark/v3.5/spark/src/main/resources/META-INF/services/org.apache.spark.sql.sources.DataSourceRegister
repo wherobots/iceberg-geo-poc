@@ -18,3 +18,4 @@
 #
 
 org.apache.iceberg.spark.source.IcebergSource
+org.apache.iceberg.spark.source.havasu.HavasuIcebergSource

@@ -66,6 +66,7 @@ import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
 import org.apache.iceberg.util.Pair;
+import org.apache.iceberg.util.havasu.HilbertCurve2D;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.CatalystTypeConverters;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -125,7 +126,9 @@ public class Spark3Util {
       tableProperties.put(TableProperties.DEFAULT_FILE_FORMAT, "avro");
     } else if ("orc".equalsIgnoreCase(provider)) {
       tableProperties.put(TableProperties.DEFAULT_FILE_FORMAT, "orc");
-    } else if (provider != null && !"iceberg".equalsIgnoreCase(provider)) {
+    } else if (provider != null
+        && !"iceberg".equalsIgnoreCase(provider)
+        && !"havasu.iceberg".equalsIgnoreCase(provider)) {
       throw new IllegalArgumentException("Unsupported format in USING: " + provider);
     }
 
@@ -386,6 +389,8 @@ public class Spark3Util {
           return org.apache.iceberg.expressions.Expressions.hour(colName);
         case "truncate":
           return org.apache.iceberg.expressions.Expressions.truncate(colName, findWidth(transform));
+        case "hilbert":
+          return toIcebergHilbertTransform(transform);
         case "zorder":
           return new Zorder(
               Stream.of(transform.references())
@@ -485,6 +490,29 @@ public class Spark3Util {
     }
 
     throw new IllegalArgumentException("Cannot find width for transform: " + transform.describe());
+  }
+
+  private static Term toIcebergHilbertTransform(Transform transform) {
+    String colName = DOT.join(transform.references()[0].fieldNames());
+    Expression[] args = transform.arguments();
+    Preconditions.checkArgument(
+        args.length == 2 || args.length == 6, "Hilbert transform requires 2 or 6 arguments");
+    Preconditions.checkArgument(args[1] instanceof Literal, "resolution should be a literal");
+    int resolution = Integer.parseInt(((Literal<?>) args[1]).value().toString());
+    if (args.length == 6) {
+      Preconditions.checkArgument(args[2] instanceof Literal, "minX should be a literal");
+      Preconditions.checkArgument(args[3] instanceof Literal, "minY should be a literal");
+      Preconditions.checkArgument(args[4] instanceof Literal, "maxX should be a literal");
+      Preconditions.checkArgument(args[5] instanceof Literal, "maxY should be a literal");
+      double minX = Double.parseDouble(((Literal<?>) args[2]).value().toString());
+      double minY = Double.parseDouble(((Literal<?>) args[3]).value().toString());
+      double maxX = Double.parseDouble(((Literal<?>) args[4]).value().toString());
+      double maxY = Double.parseDouble(((Literal<?>) args[5]).value().toString());
+      return org.apache.iceberg.expressions.Expressions.hilbert(
+          colName, resolution, minX, minY, maxX, maxY);
+    } else {
+      return org.apache.iceberg.expressions.Expressions.hilbert(colName, resolution);
+    }
   }
 
   private static String leafName(String[] fieldNames) {
@@ -665,6 +693,14 @@ public class Spark3Util {
           return sqlString(pred.term()) + " IN (" + sqlString(pred.literals()) + ")";
         case NOT_IN:
           return sqlString(pred.term()) + " NOT IN (" + sqlString(pred.literals()) + ")";
+        case ST_COVERS:
+          return "st_covers(" + sqlString(pred.term()) + ", " + sqlString(pred.literals()) + ")";
+        case ST_INTERSECTS:
+          return "st_intersects("
+              + sqlString(pred.term())
+              + ", "
+              + sqlString(pred.literals())
+              + ")";
         default:
           throw new UnsupportedOperationException("Cannot convert predicate to SQL: " + pred);
       }
@@ -1029,6 +1065,25 @@ public class Spark3Util {
         org.apache.iceberg.SortDirection direction,
         NullOrder nullOrder) {
       return String.format("hours(%s) %s %s", sourceName, direction, nullOrder);
+    }
+
+    @Override
+    public String hilbert(
+        String sourceName,
+        int sourceId,
+        HilbertCurve2D curve,
+        org.apache.iceberg.SortDirection direction,
+        NullOrder nullOrder) {
+      return String.format(
+          "hilbert(%s, %s, %s, %s, %s, %s) %s %s",
+          sourceName,
+          curve.resolution(),
+          curve.minX(),
+          curve.minY(),
+          curve.maxX(),
+          curve.maxY(),
+          direction,
+          nullOrder);
     }
 
     @Override

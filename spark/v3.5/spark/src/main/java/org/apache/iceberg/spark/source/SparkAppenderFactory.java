@@ -173,7 +173,8 @@ class SparkAppenderFactory implements FileAppenderFactory<InternalRow> {
       switch (fileFormat) {
         case PARQUET:
           return Parquet.write(file)
-              .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(dsSchema, msgType))
+              .createWriterFunc(
+                  msgType -> SparkParquetWriters.buildWriter(dsSchema, msgType, writeSchema))
               .setAll(properties)
               .metricsConfig(metricsConfig)
               .schema(writeSchema)
@@ -232,7 +233,9 @@ class SparkAppenderFactory implements FileAppenderFactory<InternalRow> {
         case PARQUET:
           return Parquet.writeDeletes(file)
               .createWriterFunc(
-                  msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                  msgType ->
+                      SparkParquetWriters.buildWriter(
+                          lazyEqDeleteSparkType(), msgType, writeSchema))
               .overwrite()
               .rowSchema(eqDeleteRowSchema)
               .withSpec(spec)
@@ -282,7 +285,8 @@ class SparkAppenderFactory implements FileAppenderFactory<InternalRow> {
               SparkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
           return Parquet.writeDeletes(file)
               .createWriterFunc(
-                  msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                  msgType ->
+                      SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType, writeSchema))
               .overwrite()
               .rowSchema(posDeleteRowSchema)
               .withSpec(spec)

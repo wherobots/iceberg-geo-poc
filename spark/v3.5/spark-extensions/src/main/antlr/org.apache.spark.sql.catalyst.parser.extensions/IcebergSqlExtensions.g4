@@ -77,6 +77,9 @@ statement
     | ALTER TABLE multipartIdentifier createReplaceTagClause                                #createOrReplaceTag
     | ALTER TABLE multipartIdentifier DROP BRANCH (IF EXISTS)? identifier                   #dropBranch
     | ALTER TABLE multipartIdentifier DROP TAG (IF EXISTS)? identifier                      #dropTag
+    | ALTER TABLE tableName=multipartIdentifier SET GEOMETRY FIELDS
+            name+=multipartIdentifier AS geometryFormat+=STRING
+            (',' name+=multipartIdentifier AS geometryFormat+=STRING)*                      #setGeometryFields
     ;
 
 createReplaceTagClause
@@ -248,6 +251,7 @@ EXISTS: 'EXISTS';
 FIELD: 'FIELD';
 FIELDS: 'FIELDS';
 FIRST: 'FIRST';
+GEOMETRY: 'GEOMETRY';
 HOURS: 'HOURS';
 IF : 'IF';
 LAST: 'LAST';

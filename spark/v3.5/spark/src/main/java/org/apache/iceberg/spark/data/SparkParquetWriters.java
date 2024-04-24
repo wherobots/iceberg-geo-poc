@@ -26,18 +26,26 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
+import org.apache.iceberg.FieldMetrics;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.parquet.ParquetValueReaders.ReusableEntry;
 import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters;
 import org.apache.iceberg.parquet.ParquetValueWriters.PrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters.RepeatedKeyValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters.RepeatedWriter;
+import org.apache.iceberg.parquet.TripleWriter;
+import org.apache.iceberg.parquet.havasu.ParquetGeometryValueWriters;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.spark.geo.GeospatialLibraryAccessor;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DecimalUtil;
 import org.apache.iceberg.util.UUIDUtil;
 import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ColumnWriteStore;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
@@ -55,21 +63,29 @@ import org.apache.spark.sql.types.MapType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.UTF8String;
+import org.locationtech.jts.geom.Geometry;
 
 public class SparkParquetWriters {
   private SparkParquetWriters() {}
 
   @SuppressWarnings("unchecked")
-  public static <T> ParquetValueWriter<T> buildWriter(StructType dfSchema, MessageType type) {
+  public static <T> ParquetValueWriter<T> buildWriter(
+      StructType dfSchema, MessageType type, Schema tableSchema) {
     return (ParquetValueWriter<T>)
-        ParquetWithSparkSchemaVisitor.visit(dfSchema, type, new WriteBuilder(type));
+        ParquetWithSparkSchemaVisitor.visit(dfSchema, type, new WriteBuilder(type, tableSchema));
+  }
+
+  public static <T> ParquetValueWriter<T> buildWriter(StructType dfSchema, MessageType type) {
+    return buildWriter(dfSchema, type, null);
   }
 
   private static class WriteBuilder extends ParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
+    private final Schema tableSchema;
 
-    WriteBuilder(MessageType type) {
+    WriteBuilder(MessageType type, Schema tableSchema) {
       this.type = type;
+      this.tableSchema = tableSchema;
     }
 
     @Override
@@ -246,6 +262,17 @@ public class SparkParquetWriters {
     public ParquetValueWriter<?> primitive(DataType sType, PrimitiveType primitive) {
       ColumnDescriptor desc = type.getColumnDescription(currentPath());
       LogicalTypeAnnotation logicalTypeAnnotation = primitive.getLogicalTypeAnnotation();
+
+      int fieldId = primitive.getId().intValue();
+      if (tableSchema != null) {
+        org.apache.iceberg.types.Type fieldType = tableSchema.findType(fieldId);
+        if (fieldType != null
+            && fieldType.typeId() == org.apache.iceberg.types.Type.TypeID.GEOMETRY) {
+          PrimitiveWriter<Geometry> geomValueWriter =
+              ParquetGeometryValueWriters.buildWriter((Types.GeometryType) fieldType, desc);
+          return new SparkGeometryWriter(geomValueWriter);
+        }
+      }
 
       if (logicalTypeAnnotation != null) {
         return logicalTypeAnnotation
@@ -426,6 +453,35 @@ public class SparkParquetWriters {
     @Override
     public void write(int repetitionLevel, byte[] bytes) {
       column.writeBinary(repetitionLevel, Binary.fromReusedByteArray(bytes));
+    }
+  }
+
+  private static class SparkGeometryWriter implements ParquetValueWriter<Object> {
+    private final PrimitiveWriter<Geometry> writer;
+
+    private SparkGeometryWriter(PrimitiveWriter<Geometry> writer) {
+      this.writer = writer;
+    }
+
+    @Override
+    public void write(int repetitionLevel, Object data) {
+      Geometry geom = GeospatialLibraryAccessor.toJTS(data);
+      writer.write(repetitionLevel, geom);
+    }
+
+    @Override
+    public List<TripleWriter<?>> columns() {
+      return writer.columns();
+    }
+
+    @Override
+    public void setColumnStore(ColumnWriteStore columnStore) {
+      writer.setColumnStore(columnStore);
+    }
+
+    @Override
+    public Stream<FieldMetrics<?>> metrics() {
+      return writer.metrics();
     }
   }
 
