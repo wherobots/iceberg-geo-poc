@@ -90,7 +90,7 @@ tez08 = { strictly = "0.8.4"}  # see rich version usage explanation above
 # havasu library versions
 jts-core = "1.19.0"
 jts2geojson = "0.16.1"
-derby = "10.14.2.0"
+derby = "10.17.1.0"
 jakarta-xml-bind-api = "2.3.2"
 uzaygezen = "0.2"
 
